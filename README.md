@@ -82,6 +82,7 @@ uv run reddit-reader fetch     # pull new items into the local database
 uv run reddit-reader read      # read unseen items interactively
 uv run reddit-reader status    # unseen count per subreddit
 uv run reddit-reader run       # fetch, then read
+uv run reddit-reader serve     # local web UI on 127.0.0.1 (see below)
 ```
 
 Keys in `read`:
@@ -97,6 +98,20 @@ Keys in `read`:
 Options for `read` and `run`: `--newest-first` (default is oldest first) and
 `--exclude-nsfw` (NSFW posts are shown by default). `--db PATH` overrides
 `REDDIT_READER_DB`.
+
+### Local web UI
+
+```sh
+uv run reddit-reader serve     # then open http://127.0.0.1:8765/
+```
+
+Shows a page of up to 20 unseen items (`--batch N`) with a **Next** button
+that marks exactly those items as seen, and an "All caught up." page when
+nothing is left. It reads only the local database (run `fetch` separately)
+and makes no Reddit API calls. It always binds to `127.0.0.1` (port via
+`--port`), has no authentication, loads no external assets or scripts, and
+rejects requests with a foreign `Host` or `Origin` header. `--newest-first`
+and `--exclude-nsfw` work as in `read`.
 
 ### Troubleshooting
 
