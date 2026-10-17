@@ -10,6 +10,7 @@ from typing import Any, Callable
 from . import config, db
 from .config import ConfigError
 from .reader import CAUGHT_UP, run_reader
+from .web import serve
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -31,6 +32,12 @@ def build_parser() -> argparse.ArgumentParser:
     status = sub.add_parser("status", help="unseen count per subreddit")
     status.add_argument("--exclude-nsfw", action="store_true", help="ignore NSFW items")
     sub.add_parser("run", parents=[view], help="fetch, then read")
+    serve = sub.add_parser("serve", parents=[view], help="local web UI on 127.0.0.1")
+    serve.add_argument("--port", type=int, default=8765, help="port (default: 8765)")
+    serve.add_argument(
+        "--batch", type=int, default=20, choices=range(1, 101), metavar="N",
+        help="items per page, 1-100 (default: 20)",
+    )
     return parser
 
 
@@ -82,6 +89,7 @@ def main(
     *,
     reddit_factory: Callable[[], Any] = default_reddit_factory,
     reader: Callable[..., int] = run_reader,
+    server: Callable[..., int] = serve,
 ) -> int:
     args = build_parser().parse_args(argv)
     try:
@@ -96,6 +104,15 @@ def main(
             return cmd_fetch(conn, reddit_factory)
         if args.command == "status":
             return cmd_status(conn, args.exclude_nsfw)
+        if args.command == "serve":
+            conn.close()
+            return server(
+                path,
+                port=args.port,
+                newest_first=args.newest_first,
+                exclude_nsfw=args.exclude_nsfw,
+                batch=args.batch,
+            )
         if args.command == "run":
             rc = cmd_fetch(conn, reddit_factory)
             if rc != 0:
